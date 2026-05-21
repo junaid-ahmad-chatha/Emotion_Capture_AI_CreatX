@@ -87,13 +87,6 @@ OPENROUTER_SITE_URL=http://localhost:8000
 OPENROUTER_APP_NAME=MindfulMirror
 ```
 
-Important:
-
-- Do not commit `.env`.
-- Commit `.env.example` only.
-- Restart the backend after changing `.env`; environment variables are loaded when the server starts.
-- If `OPENROUTER_API_KEY` is missing, the chatbot will show: `The chat AI is not configured yet. Add OPENROUTER_API_KEY to your .env file to enable it.`
-
 ## Running the App
 
 Start the backend from the `backend` folder:
