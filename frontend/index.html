@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="MindfulMirror — AI-powered reflection and emotional tracking.">
+    <title>MindfulMirror</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+    <div class="app-frame">
+        <div class="app-wrapper">
+
+            <!-- Header Bar (no settings icon) -->
+            <header class="app-header">
+                <div class="header-brand">
+                    <span class="brand-logo">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="smile-svg">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="9" cy="9" r="1" fill="currentColor"/>
+                            <circle cx="15" cy="9" r="1" fill="currentColor"/>
+                            <path d="M8 14c1.5 2 4.5 2 6 0" stroke-linecap="round"/>
+                        </svg>
+                    </span>
+                    <span class="brand-name">MindfulMirror</span>
+                </div>
+            </header>
+
+            <!-- Main Content -->
+            <main class="app-main">
+
+                <!-- ═══ HOME TAB (renamed from "Log") — default landing ═══ -->
+                <section class="tab-content active" id="tab-log">
+
+                    <!-- Camera Capture View -->
+                    <div class="log-camera-view" id="camera-log-view">
+                        <p class="log-top-instruction">Look into the mirror. Let's find your inner calm together.</p>
+
+                        <div class="mirror-container">
+                            <video id="webcam" autoplay playsinline></video>
+                            <canvas id="capture-canvas" class="hidden"></canvas>
+                            <div class="mirror-overlay">
+                                <div class="mirror-face-guide"></div>
+                                <div class="mirror-active-pill">• ACTIVE</div>
+                            </div>
+
+                            <!-- Floating Glass Result Card -->
+                            <div class="mirror-glass-card" id="mirror-glass-card">
+                                <span class="glass-lbl">Detected</span>
+                                <div class="glass-line"></div>
+                                <h3 class="glass-emotion" id="mirror-detected-emotion">Calm</h3>
+                                <span class="glass-confidence" id="mirror-detected-confidence">Awaiting Scan</span>
+                            </div>
+                        </div>
+
+                        <div class="log-controls">
+                            <button class="btn-green-capsule" id="btn-camera-action" onclick="handleCameraAction()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="btn-check-svg hidden" id="camera-action-check">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                                <span id="camera-action-text">Save Mood</span>
+                            </button>
+                            <button class="btn-transparent-capsule hidden" id="btn-camera-retake" onclick="resetCameraView()">
+                                <span class="btn-manual-icon">🔄</span> Retake
+                            </button>
+                            <div class="secondary-controls">
+                                <button class="btn-transparent-capsule" id="btn-manual-toggle" onclick="toggleManualGrid()">
+                                    <span class="btn-manual-icon">✏️</span>
+                                    Manual Entry
+                                </button>
+                                <input type="file" id="image-upload-input" accept="image/*" class="hidden" style="display: none;" onchange="handleImageUpload(event)">
+                                <button class="btn-transparent-capsule" onclick="document.getElementById('image-upload-input').click()">
+                                    <span class="btn-manual-icon">🖼️</span>
+                                    Upload Pic
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Manual Selection View -->
+                    <div class="log-manual-view hidden" id="manual-log-view">
+                        <p class="log-top-instruction">How are you feeling in this moment?</p>
+
+                        <div class="custom-dropdown" id="manual-emotion-dropdown" onclick="toggleDropdown()">
+                            <div class="dropdown-selected" id="dropdown-selected">
+                                <span class="mindful-btn-emoji">😊</span>
+                                <div class="mindful-btn-text">
+                                    <span class="mindful-btn-title">Happy</span>
+                                    <span class="mindful-btn-desc">Energetic & Positive</span>
+                                </div>
+                            </div>
+                            <div class="dropdown-options hidden" id="dropdown-options">
+                                <!-- Options populated by JS -->
+                            </div>
+                        </div>
+
+                        <div class="log-controls">
+                            <button class="btn-green-capsule disabled" id="btn-confirm-manual" onclick="confirmManualMood()" disabled>
+                                Confirm Mood
+                            </button>
+                            <button class="btn-transparent-capsule" onclick="toggleCameraView()">
+                                ← Back to Camera
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Reflection Chat View -->
+                    <div class="log-reflection-view hidden" id="reflection-log-view">
+                        <span class="reflection-current-state" id="reflection-state-lbl">CURRENT STATE: PEACEFUL</span>
+                        <h2 class="reflection-heading" id="reflection-heading">Deepening Your Calm</h2>
+
+                        <div class="reflection-center-avatar">
+                            <div class="avatar-circle" id="reflection-avatar">😊</div>
+                        </div>
+
+                        <!-- Advice Card -->
+                        <div class="advice-card" style="margin: 20px 0; padding: 15px; border-radius: 16px; background-color: #E8F5E9; border: 1px solid #C8E6C9; color: #2E7D32;">
+                            <p style="margin: 0; font-size: 14px; display: flex; gap: 8px; align-items: flex-start;">
+                                <span>💡</span>
+                                <span id="reflection-gemini-advice">Thinking of a helpful insight...</span>
+                            </p>
+                        </div>
+
+                        <div class="reflection-bubbles-container">
+                            <div class="chat-bubble-label">AI Reflection</div>
+                            <div class="chat-bubble-card">
+                                <p id="reflection-gemini-prompt">It seems you're feeling peaceful today. What part of today affected you the most?</p>
+                            </div>
+                        </div>
+
+                        <div class="context-reflection-card">
+                            <img src="/static/sunset_reflection.png" class="context-card-img" alt="Peaceful moment">
+                            <div class="context-card-info">
+                                <h4 id="context-card-title">A Moment of Stillness</h4>
+                                <p id="context-card-desc">Your reflection matters. Take a moment to honor what you're feeling.</p>
+                            </div>
+                        </div>
+
+                        <!-- Input Box -->
+                        <div class="reflection-send-box">
+                            <input type="text" class="reflection-note-input" id="reflection-user-note" placeholder="Reflect on your moment..." onkeydown="if(event.key==='Enter') submitReflectionText()">
+                            <button class="btn-send-reflection" onclick="submitReflectionText()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <line x1="12" y1="19" x2="12" y2="5"/>
+                                    <polyline points="5 12 12 5 19 12"/>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- Solution Modal (Hidden by default) -->
+                        <div class="solution-modal hidden" id="solution-modal" style="margin-top: 20px; padding: 16px; border-radius: 16px; background-color: #E3F2FD; border: 1px solid #BBDEFB; color: #1565C0;">
+                            <h3 style="margin: 0 0 8px 0; font-size: 16px; display: flex; align-items: center; gap: 8px;"><span>✨</span> AI Insight</h3>
+                            <p id="solution-text" style="margin: 0 0 16px 0; font-size: 14px; line-height: 1.5;">Analyzing your reflection...</p>
+                            <button class="btn-green-capsule" onclick="closeSolutionModal()" style="width: 100%;">Done</button>
+                        </div>
+
+                        <!-- Bottom Controls -->
+                        <div class="reflection-bottom-controls" id="reflection-bottom-controls">
+                            <button class="btn-green-capsule" onclick="finishReflection()">
+                                Finish Reflection
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ═══ DASHBOARD TAB (renamed from "Home") ═══ -->
+                <section class="tab-content" id="tab-home">
+                    <div class="welcome-section">
+                        <span class="welcome-tag">WELCOME BACK</span>
+                        <h1 class="welcome-title">Good morning, Alex</h1>
+                        <p class="welcome-subtitle">Take a deep breath. How are you feeling in this moment?</p>
+                    </div>
+
+                    <div class="metrics-row">
+                        <div class="metric-card">
+                            <div class="metric-card-info">
+                                <span class="metric-card-label">Today's Mood</span>
+                                <h3 class="metric-card-val" id="home-today-mood">Calm</h3>
+                                <span class="metric-card-desc" id="home-today-desc">Stable & Grounded</span>
+                            </div>
+                            <div class="metric-card-badge">
+                                <span class="badge-leaf-icon" id="home-today-emoji">🍃</span>
+                            </div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-card-info">
+                                <span class="metric-card-label">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="trend-icon">
+                                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                                        <polyline points="17 6 23 6 23 12"/>
+                                    </svg>
+                                    Mood Streak
+                                </span>
+                                <h3 class="metric-card-val streak-val">
+                                    <span id="home-streak-count">5</span>
+                                    <span class="streak-label-suffix">days mindful</span>
+                                </h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quote Card -->
+                    <div class="quote-card">
+                        <span class="quote-mark">"</span>
+                        <p class="quote-text" id="dashboard-quote-text">Feelings are just visitors, let them come and go.</p>
+                        <span class="quote-author" id="dashboard-quote-author">— Mooji</span>
+                    </div>
+
+                    <!-- CTA: redirects to Insights -->
+                    <div class="checkin-container">
+                        <button class="btn-checkin" onclick="switchTab('insights')">
+                            <span class="btn-checkin-icon-bg">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="camera-icon">
+                                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                                </svg>
+                            </span>
+                            Check Your Mood
+                        </button>
+                        <div class="sync-indicator">
+                            <span class="sync-dot"></span>
+                            AI Emotion Sync Active
+                        </div>
+                    </div>
+
+                    <!-- Recent Reflections (no View All button) -->
+                    <div class="recent-reflections">
+                        <div class="recent-header">
+                            <h2>RECENT REFLECTIONS</h2>
+                        </div>
+                        <div class="reflection-scroll" id="home-reflections-list">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ═══ INSIGHTS TAB ═══ -->
+                <section class="tab-content" id="tab-insights">
+                    <div class="welcome-section">
+                        <h1 class="welcome-title">Weekly Journey</h1>
+                        <p class="welcome-subtitle">Your emotional landscape over the past 7 days.</p>
+                    </div>
+
+                    <div class="insights-chart-card">
+                        <div class="chart-card-header">
+                            <h3>Mood Trends</h3>
+                            <div class="chart-period-tabs">
+                                <button class="period-tab" data-days="1" onclick="setChartPeriod(this)">Day</button>
+                                <button class="period-tab active" data-days="7" onclick="setChartPeriod(this)">Week</button>
+                                <button class="period-tab" data-days="30" onclick="setChartPeriod(this)">Month</button>
+                            </div>
+                        </div>
+                        <div class="insights-chart-container">
+                            <canvas id="chart-trends-smooth"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="insights-metrics-grid">
+                        <div class="insight-metric-card peak-mood-card">
+                            <span class="insight-card-sparkle">✨</span>
+                            <span class="insight-card-lbl">Peak Mood</span>
+                            <h3 id="insights-peak-mood-val">Serenity</h3>
+                        </div>
+                        <div class="insight-metric-card stability-card">
+                            <span class="insight-card-trend-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:20px;height:20px">
+                                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                                </svg>
+                            </span>
+                            <span class="insight-card-lbl">Stability</span>
+                            <h3 id="insights-stability-val">84%</h3>
+                        </div>
+                    </div>
+
+                    <div class="emotional-patterns-section">
+                        <h3>Emotional Patterns</h3>
+
+                        <div id="insights-patterns-list">
+                            <!-- Populated by JS from /api/insights -->
+                            <div class="pattern-list-card" style="opacity: 0.6;">
+                                <div class="pattern-icon-circle blue-circle"><span>✨</span></div>
+                                <div class="pattern-card-info">
+                                    <h4>Analyzing...</h4>
+                                    <p>Generating mindful insights based on your recent activity.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tip-bulb-box">
+                        <div class="tip-icon">💡</div>
+                        <div class="tip-text">
+                            <strong>Did you know?</strong>
+                            <p>Short, 5-minute deep breathing exercises on Thursday afternoons have historically reduced your "stress" markers by 22% compared to other days.</p>
+                        </div>
+                    </div>
+
+                    <div class="scenic-quote-card" style="background-image: linear-gradient(rgba(0,0,0,0.15), rgba(0,0,0,0.55)), url('/static/misty_forest_lake.png')">
+                        <p class="scenic-quote-text">"In the mirror of your mind, every ripple eventually finds its rest."</p>
+                    </div>
+                </section>
+
+                <!-- ═══ PROFILE TAB ═══ -->
+                <section class="tab-content" id="tab-profile">
+                    <div class="welcome-section">
+                        <h1 class="welcome-title">Your Profile</h1>
+                        <p class="welcome-subtitle">History and account statistics.</p>
+                    </div>
+
+                    <div class="profile-stats-card">
+                        <div class="profile-avatar-row">
+                            <div class="profile-avatar">ME</div>
+                            <div class="profile-user-info">
+                                <h2>Alex</h2>
+                                <p>Mindful Explorer</p>
+                            </div>
+                        </div>
+                        <div class="profile-stats-grid">
+                            <div class="p-stat">
+                                <span class="p-num" id="profile-total-logs">0</span>
+                                <span class="p-lbl">Total Checks</span>
+                            </div>
+                            <div class="p-stat">
+                                <span class="p-num" id="profile-streak-count">5</span>
+                                <span class="p-lbl">Current Streak</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="history-section">
+                        <h3>Reflection Logs</h3>
+                        <div class="history-list" id="profile-history-list"></div>
+                    </div>
+                </section>
+
+            </main>
+
+            <!-- Bottom Navigation: Home → Dashboard, Log → Home -->
+            <nav class="bottom-nav">
+                <button class="nav-btn" data-tab="home">
+                    <div class="nav-btn-icon-wrapper">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-svg">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                            <polyline points="9 22 9 12 15 12 15 22"/>
+                        </svg>
+                    </div>
+                    <span class="nav-btn-label">Dashboard</span>
+                </button>
+
+                <button class="nav-btn active" data-tab="log">
+                    <div class="nav-btn-icon-wrapper">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-svg">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="16"/>
+                            <line x1="8" y1="12" x2="16" y2="12"/>
+                        </svg>
+                    </div>
+                    <span class="nav-btn-label">Home</span>
+                </button>
+
+                <button class="nav-btn" data-tab="insights">
+                    <div class="nav-btn-icon-wrapper">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="nav-svg">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                        </svg>
+                    </div>
+                    <span class="nav-btn-label">Insights</span>
+                </button>
+
+                <button class="nav-btn" data-tab="profile">
+                    <div class="nav-btn-icon-wrapper">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-svg">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </div>
+                    <span class="nav-btn-label">Profile</span>
+                </button>
+            </nav>
+
+        </div>
+    </div>
+
+    <!-- MindfulMirror AI Chatbot Widget (OpenRouter) -->
+    <div id="chat-widget-container" class="chat-widget-container">
+
+        <!-- Chat Window -->
+        <div id="chat-window" class="chat-window hidden">
+            <div class="chat-header">
+                <div class="chat-header-info">
+                    <div class="chat-avatar-dot">
+                        <span>🧠</span>
+                    </div>
+                    <div>
+                        <h3 class="chat-header-title">MindfulMirror AI</h3>
+                        <span class="chat-header-sub">Powered by OpenRouter · Personalized to you</span>
+                    </div>
+                </div>
+                <button class="close-chat-btn" onclick="toggleChat()" aria-label="Close chat">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="chat-messages" id="chat-messages">
+                <!-- Welcome message injected by JS -->
+            </div>
+
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Ask about your emotions…" onkeydown="if(event.key==='Enter') sendChatMessage()" autocomplete="off">
+                <button class="btn-send-chat" onclick="sendChatMessage()" aria-label="Send">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18">
+                        <line x1="22" y1="2" x2="11" y2="13"/>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Floating Action Button -->
+        <button id="chat-fab" class="chat-fab" onclick="toggleChat()" aria-label="Open AI chat">
+            <span class="chat-fab-icon" id="chat-fab-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+            </span>
+            <span class="chat-fab-badge hidden" id="chat-fab-badge"></span>
+        </button>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+    <script src="/static/app.js"></script>
+</body>
+</html>

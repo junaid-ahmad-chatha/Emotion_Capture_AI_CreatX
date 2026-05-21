@@ -1,111 +1,190 @@
 # MindfulMirror
 
-Lightweight personal emotion-tracker and reflection app (local-first).
+MindfulMirror is a local-first emotion tracking and reflection app. It uses a FastAPI backend, a vanilla HTML/CSS/JavaScript frontend, a local Keras emotion model for webcam-based emotion detection, SQLite for local history, Gemini for optional reflection features, and OpenRouter for the chatbot.
 
-This repository runs a FastAPI backend that performs local emotion detection (via a Keras model) and serves a single-page frontend that logs moods, shows charts, and offers AI-powered reflections and chat.
+The app is designed so private data stays on your machine. Camera frames are processed by the local backend, emotion logs are saved to a local SQLite database, and real API keys are kept in a local `.env` file that must not be committed.
 
-Goals:
-- Keep all sensitive data local (camera frames processed in-memory).
-- Offer optional AI enhancements via Gemini and OpenRouter.
+## Features
 
----
+- Detect emotions from webcam frames using a local `emotion_model.keras` model.
+- Log emotions manually when the camera or model is unavailable.
+- Store emotion history locally in `backend/emotions.db`.
+- Show emotion history, charts, patterns, and recent mood activity.
+- Generate optional reflection questions, advice, and insights with Google Gemini.
+- Chat with a personalized emotional wellness assistant through OpenRouter.
 
-## Quickstart (Windows / macOS / Linux)
+## Requirements
 
-Prerequisites:
-- Python 3.10
-- Git
-- `emotion_model.keras` placed in the project root for camera detection (optional)
+- Python 3.10 is recommended for TensorFlow compatibility.
+- Git.
+- A local `emotion_model.keras` file in the project root if you want webcam emotion detection.
+- `OPENROUTER_API_KEY` is required for the chatbot to work.
+- `GEMINI_API_KEY` is optional and only needed for Gemini-powered reflections, advice, and insights.
 
-1) Clone the repo
+## Setup
+
+Clone the repository:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/MindfulMirror.git
-cd MindfulMirror
+git clone https://github.com/junaid-ahmad-chatha/Emotion_Capture_AI_CreatX.git
+cd Emotion_Capture_AI_CreatX
 ```
 
-2) Create and activate a Python 3.10 environment
+Create and activate a Python 3.10 environment.
 
-Using conda:
+Using Conda:
 
 ```bash
-conda create -n mindful_env python=3.10 -y
-conda activate mindful_env
+conda create -n mindfulmirror python=3.10 -y
+conda activate mindfulmirror
 ```
 
 Using venv:
 
 ```bash
 python3.10 -m venv venv
+
 # Windows
 venv\Scripts\activate
-# macOS / Linux
+
+# macOS/Linux
 source venv/bin/activate
 ```
 
-3) Install Python dependencies
+Install dependencies:
 
 ```bash
-pip install -r backend/requirements.txt
+pip install -r requirements.txt
 ```
 
-4) (Optional) Add API keys
+You can also install from `backend/requirements.txt`; both files currently contain the same Python dependencies.
 
-Create a `.env` file at the project root if you want AI-powered reflections/chat to use external services:
+## Environment Variables
 
+Copy the example env file:
+
+```bash
+cp .env.example .env
 ```
-GEMINI_API_KEY=your_google_gemini_api_key
+
+On Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Edit `.env` and add your real keys:
+
+```env
+# Optional: used for reflection questions, advice, and insights.
+GEMINI_API_KEY=your_gemini_api_key
+
+# Required for the chatbot.
 OPENROUTER_API_KEY=your_openrouter_api_key
+OPENROUTER_MODEL=openai/gpt-4o-mini
+OPENROUTER_API_URL=https://openrouter.ai/api/v1/chat/completions
+OPENROUTER_SITE_URL=http://localhost:8000
+OPENROUTER_APP_NAME=MindfulMirror
 ```
-Both keys are optional — the app has fallback behavior when keys are missing.
 
-5) Start the backend server
+Important:
+
+- Do not commit `.env`.
+- Commit `.env.example` only.
+- Restart the backend after changing `.env`; environment variables are loaded when the server starts.
+- If `OPENROUTER_API_KEY` is missing, the chatbot will show: `The chat AI is not configured yet. Add OPENROUTER_API_KEY to your .env file to enable it.`
+
+## Running the App
+
+Start the backend from the `backend` folder:
 
 ```bash
 cd backend
-python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-6) Open the app
+Open the app:
 
-Open http://localhost:8000 in your browser and allow camera access when prompted.
+```text
+http://127.0.0.1:8000
+```
 
----
+The backend serves the frontend automatically from the `frontend/` folder.
 
-## Notes
-- If `emotion_model.keras` is missing, camera detection will be disabled but manual logging, AI reflections, and chat still work.
-- TensorFlow often requires Python 3.10; if you see import errors, ensure your environment uses 3.10.
-- Emotion logs are stored locally in `backend/emotions.db` (SQLite).
+## API Overview
 
----
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/detect-emotion` | Detect emotion from a base64 image frame. |
+| `POST` | `/api/log-emotion` | Save an emotion entry. |
+| `POST` | `/api/update-note` | Update the note for an emotion entry. |
+| `GET` | `/api/history` | Return recent emotion logs. |
+| `GET` | `/api/patterns` | Return aggregate counts and chart data. |
+| `POST` | `/api/reflect` | Generate a reflection question. Gemini key optional; fallback questions are used without it. |
+| `GET` | `/api/insights` | Generate emotional pattern insights. Gemini key optional; rule-based fallback is used without it. |
+| `POST` | `/api/advice` | Generate short advice for an emotion. Gemini key optional; fallback advice is used without it. |
+| `POST` | `/api/analyze-reflection` | Generate feedback for a written reflection. Gemini key optional; fallback response is used without it. |
+| `POST` | `/api/chat` | Chat with the OpenRouter assistant. Requires `OPENROUTER_API_KEY`. |
+
+## Local Files Not Uploaded to GitHub
+
+The following files are intentionally ignored:
+
+- `.env` and other local env files.
+- `backend/emotions.db` and other database files.
+- Python cache folders such as `__pycache__/`.
+- Local logs.
+- `creatx_project_video.mp4` because it is larger than GitHub's normal 100 MB file limit.
+
+The existing `emotion_model.keras` file may be present in this repository, but model files are ignored for future commits so large replacement weights are not uploaded accidentally.
+
+If you want to share the video later, use GitHub Releases or Git LFS.
+
+## Project Structure
+
+```text
+.
+|-- .env.example
+|-- .gitignore
+|-- LICENSE
+|-- README.md
+|-- requirements.txt
+|-- emotion_model.keras
+|-- backend/
+|   |-- main.py
+|   |-- database.py
+|   |-- emotion_detector.py
+|   |-- reflection.py
+|   |-- chatbot.py
+|   `-- requirements.txt
+`-- frontend/
+    |-- index.html
+    |-- app.js
+    |-- style.css
+    |-- forest_reflection.png
+    |-- misty_forest_lake.png
+    `-- sunset_reflection.png
+```
 
 ## Troubleshooting
-- Camera blocked: make sure the site is served over HTTP(S) and browser permission is granted.
-- Missing TensorFlow: use Python 3.10 and reinstall with `pip install -r backend/requirements.txt`.
-- AI timeouts: check `.env` API keys and network connectivity.
 
----
+Chatbot says the API key is not configured:
 
-## Project layout
+- Make sure the key is in `.env`, not only `.env.example`.
+- Confirm the variable name is exactly `OPENROUTER_API_KEY`.
+- Restart the backend after editing `.env`.
 
-```
-.
-├── emotion_model.keras    # optional Keras model (not distributed)
-├── backend/
-│   ├── main.py
-│   ├── database.py
-│   ├── emotion_detector.py
-│   ├── reflection.py
-│   ├── chatbot.py
-│   └── requirements.txt
-└── frontend/
-    ├── index.html
-    ├── app.js
-    └── style.css
-```
+Camera detection does not work:
 
----
+- Confirm `emotion_model.keras` exists in the project root.
+- Allow camera access in the browser.
+- Open the app through `http://127.0.0.1:8000`, not a `file://` URL.
+
+TensorFlow import errors:
+
+- Use Python 3.10.
+- Reinstall dependencies with `pip install -r requirements.txt`.
 
 ## License
-MIT — see LICENSE
 
+MIT License. See `LICENSE` for details.
