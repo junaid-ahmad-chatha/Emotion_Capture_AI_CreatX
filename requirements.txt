@@ -1,0 +1,13 @@
+# Project-wide Python dependencies (same as backend/requirements.txt)
+# Use a Python 3.10 environment when installing (TensorFlow compatibility)
+
+fastapi==0.115.0
+uvicorn==0.30.0
+python-dotenv==1.0.1
+httpx==0.27.0
+google-generativeai==0.8.0
+python-multipart==0.0.9
+tensorflow>=2.15.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+Markdown>=3.4.1
